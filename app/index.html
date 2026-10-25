@@ -399,7 +399,7 @@ function renderQuiz(app){
     var cls='ch';
     if(pick){
       if(ans&&n===ans)cls+=' right';
-      else if(n===pick)cls+=' wrong';
+      else if(n===pick&&ans)cls+=' wrong';
       else cls+=' dim';
     }
     var b=h('button',{class:cls,disabled:!!pick,'aria-label':n+'번',onclick:function(){
