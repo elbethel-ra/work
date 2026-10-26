@@ -219,7 +219,7 @@ D.hist=D.hist||{};D.mock=D.mock||[];if(D.live===undefined)D.live=null;
 function save(){mem=D;try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}}
 
 /* ---------- data ---------- */
-var SUBJ=[],ALL=[],BYID={},EX={};
+var SUBJ=[],ALL=[],BYID={},EX={},GRP={};
 function fetchJSON(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(u);return r.json();});}
 function boot(){
   var app=document.getElementById('app');
@@ -233,7 +233,7 @@ function boot(){
         return fetchJSON('data/e_'+s.k+'.json').then(function(e){for(var i in e)EX[i]=e[i];}).catch(function(){});
       });
     }));
-  }).then(function(){go('home');}).catch(function(){
+  }).then(function(){return fetchJSON('data/groups.json').then(function(g){GRP=g;}).catch(function(){});}).then(function(){go('home');}).catch(function(){
     app.innerHTML='<div class="empty"><b>문제를 불러오지 못했습니다</b>페이지를 새로고침해 주세요.</div>';
   });
 }
@@ -832,8 +832,21 @@ function renderStudy(app){
       var yr=h('div',{class:'yrs',role:'img','aria-label':'연도별 출제 수'});
       YEARS.forEach(function(y){var c=o.y[y]||0;
         yr.appendChild(h('div',null,h('span',null,c||''),h('i',{style:'height:'+(c?Math.max(4,Math.round(c/mx*44)):0)+'px'}),h('span',null,String(y).slice(2))));});
+      var gl=GRP[key]||[];
+      var gbox=null;
+      if(gl.length>1){
+        gbox=h('div',{style:'margin-top:14px'},h('div',{class:'small muted'},'비슷한 질문끼리 묶음 ('+gl.length+')'));
+        gl.forEach(function(g){
+          var att=0,ok=0;
+          g[1].forEach(function(id){var r=D.r[id];if(r){att++;if(r.ok)ok++;}});
+          gbox.appendChild(h('button',{class:'rank',style:'margin-top:6px',onclick:function(){
+            startSession(g[1].slice(),o.t+' · '+g[0]);
+          }},h('b',{style:'font-size:14px;min-width:26px'},g[1].length),h('span',null,g[0]),
+            h('small',null,att?Math.round(ok/att*100)+'%':'미학습')));
+        });
+      }
       var nw=topicQs(o,'new').length,wr=topicQs(o,'wrong').length;
-      var bd=h('div',{class:'body'},yr,
+      var bd=h('div',{class:'body'},yr,gbox,
         h('div',{class:'row',style:'margin-top:12px'},
           h('button',{class:'btn ghost sm',disabled:!nw,onclick:function(){startSession(topicQs(o,'new'),o.t+' · 안 푼 문제');}},'안 푼 '+nw),
           h('button',{class:'btn ghost sm',disabled:!wr,onclick:function(){startSession(topicQs(o,'wrong'),o.t+' · 오답');}},'틀린 '+wr),
